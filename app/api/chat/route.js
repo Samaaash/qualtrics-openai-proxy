@@ -15,40 +15,38 @@ export async function POST(req) {
       max_tokens = 300
     } = body;
 
-    const input = [];
+    const messages = [];
 
     if (system) {
-      input.push({
+      messages.push({
         role: "system",
-        content: [{ type: "input_text", text: system }]
+        content: system
       });
     }
 
-    for (const msg of history) {
-      input.push({
+    history.forEach(msg => {
+      messages.push({
         role: msg.role,
-        content: [{ type: "input_text", text: msg.content }]
+        content: msg.content
       });
-    }
+    });
 
-    if (!history.length || history[history.length - 1].content !== prompt) {
-      input.push({
-        role: "user",
-        content: [{ type: "input_text", text: prompt }]
-      });
-    }
+    messages.push({
+      role: "user",
+      content: prompt
+    });
 
-    const response = await fetch("https://api.openai.com/v1/responses", {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model,
-        input,
-        temperature,
-        max_output_tokens: max_tokens
+        model: model,
+        messages: messages,
+        temperature: temperature,
+        max_tokens: max_tokens
       })
     });
 
@@ -61,9 +59,11 @@ export async function POST(req) {
       );
     }
 
-    const text = data.output_text || "(no response)";
+    const text =
+      data.choices?.[0]?.message?.content || "(no response)";
 
     return Response.json({ text });
+
   } catch (error) {
     return Response.json(
       { error: "Server error", details: String(error) },
