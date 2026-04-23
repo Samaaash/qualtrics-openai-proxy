@@ -1,5 +1,29 @@
 export async function GET() {
-  return Response.json({ ok: true, message: "chat route works" });
+  return new Response(
+    JSON.stringify({
+      ok: true,
+      message: "chat route works"
+    }),
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
+    }
+  );
+}
+
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization"
+    }
+  });
 }
 
 export async function POST(req) {
@@ -43,31 +67,57 @@ export async function POST(req) {
         "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: model,
-        messages: messages,
-        temperature: temperature,
-        max_tokens: max_tokens
+        model,
+        messages,
+        temperature,
+        max_tokens
       })
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      return Response.json(
-        { error: "OpenAI request failed", details: data },
-        { status: response.status }
+      return new Response(
+        JSON.stringify({
+          error: "OpenAI request failed",
+          details: data
+        }),
+        {
+          status: response.status,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+          }
+        }
       );
     }
 
     const text =
-      data.choices?.[0]?.message?.content || "(no response)";
+      data?.choices?.[0]?.message?.content || "(no response)";
 
-    return Response.json({ text });
+    return new Response(
+      JSON.stringify({ text }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        }
+      }
+    );
 
   } catch (error) {
-    return Response.json(
-      { error: "Server error", details: String(error) },
-      { status: 500 }
+    return new Response(
+      JSON.stringify({
+        error: "Server error",
+        details: String(error)
+      }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        }
+      }
     );
   }
 }
